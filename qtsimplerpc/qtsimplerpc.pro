@@ -11,10 +11,12 @@ SOURCES += main.cpp \
     rpcsignalmapper.cpp \
     rpcconnection.cpp \
     rpccommandmapper.cpp \
-    qjson.cpp
+    qjson.cpp \
+    exampleclass.cpp
 
 HEADERS += \
     rpcsignalmapper.h \
     rpcconnection.h \
     rpccommandmapper.h \
-    qjson.h
+    qjson.h \
+    exampleclass.h
