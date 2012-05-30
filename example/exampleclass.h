@@ -14,7 +14,10 @@ signals:
 
 public slots:
     int add(int a, int b);
-    void sleepAndNotify(QString message, int msec);
+    QString concat(QString a, QString b);
+    int sum(QList<int> list);
+    qreal sum(QList<qreal> list);
+    void sleepAndNotify(int msec, QString message);
 };
 
 #endif // EXAMPLECLASS_H

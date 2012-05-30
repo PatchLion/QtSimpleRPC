@@ -43,8 +43,10 @@ RpcCommandMapper::CommandResult RpcCommandMapper::runCommand(const QByteArray &c
     const QMetaObject *mo = obj->metaObject();
     QByteArray memberName = objectSlot.memberName;
 
+    /*
     qDebug("Found mapping: %s => %s::%s(...)", commandName.constData(),
            mo->className(), memberName.constData());
+    */
 
     // Search for meta methods with given name (no signature check here!)
     QList<QMetaMethod> methods;
@@ -58,7 +60,7 @@ RpcCommandMapper::CommandResult RpcCommandMapper::runCommand(const QByteArray &c
 
     //we first check if the argument count can match one of the signatures, because this is fast:
     for(int i = 0; i < methods.count(); ++i) {
-        qDebug() << methods.at(i).signature();
+        //qDebug() << methods.at(i).signature();
         if(methods.at(i).parameterTypes().count() != arguments.count())
             methods.removeAt(i--);
     }
@@ -112,9 +114,9 @@ bool RpcCommandMapper::checkSignature(QMetaMethod method, const QVariantList &ar
 
     for(int i = 0; i < arguments.count(); ++i)
     {
-        qDebug("checking argument: %s", method.signature());
+        //qDebug("checking argument: %s", method.signature());
         QByteArray type = method.parameterTypes().at(i);
-        qDebug() << "against provided type:" << type;
+        //qDebug() << "against provided type:" << type;
         const QVariant & arg = arguments.at(i);
         if(!checkTypes(type, arg))
             return false;
@@ -125,7 +127,7 @@ bool RpcCommandMapper::checkSignature(QMetaMethod method, const QVariantList &ar
 bool RpcCommandMapper::checkTypes(const QByteArray &typeDescription, const QVariant &argument)
 {
     QByteArray type = normalizeType(typeDescription);
-    qDebug("checking type (normalized): \"%s\" vs \"%s\"", type.constData(), argument.typeName());
+    //qDebug("checking type (normalized): \"%s\" vs \"%s\"", type.constData(), argument.typeName());
 
     if (type == "QVariant")
     {
@@ -154,6 +156,10 @@ bool RpcCommandMapper::checkTypes(const QByteArray &typeDescription, const QVari
     else if (type == "qlonglong")
     {
         return (argument.type() == QVariant::LongLong);
+    }
+    else if (type == "double")
+    {
+        return (argument.type() == QVariant::Double);
     }
     else if (type == "bool")
     {
@@ -197,7 +203,8 @@ void * RpcCommandMapper::newInstanceOfType(const QByteArray &typeDescription, co
     else if (typeDescription == "QMap<QString,QMap<QString,"#typeName"> >") \
         return (void*) new QMap<QString,QMap<QString,typeName > >(extractMapOfMaps<typeName >(value.toMap()))
 
-    int type = QMetaType::type(normalizeType(typeDescription).constData());
+    int type = QMetaType::type(typeDescription.constData());
+    qDebug("QMetaType::type(\"%s\") = %i", typeDescription.constData(), type);
     if (type) {
         if (value.canConvert((QVariant::Type)type)) {
             QVariant converted = value;
@@ -207,14 +214,17 @@ void * RpcCommandMapper::newInstanceOfType(const QByteArray &typeDescription, co
             return QMetaType::construct(type);
         }
     }
+    CHECK_TYPE(bool);
+    CHECK_TYPE(int);
+    CHECK_TYPE(long long);
+    CHECK_TYPE(float);
+    CHECK_TYPE(double);
+    CHECK_TYPE(qreal);
+    CHECK_TYPE(QString);
+    CHECK_TYPE(QByteArray);
     CHECK_TYPE(QVariant);
     CHECK_TYPE(QVariantList);
     CHECK_TYPE(QVariantMap);
-    CHECK_TYPE(QByteArray);
-    CHECK_TYPE(QString);
-    CHECK_TYPE(int);
-    CHECK_TYPE(long long);
-    CHECK_TYPE(bool);
     else {
         qWarning("Failed to instanciate an argument of type %s", typeDescription.constData());
         return 0;
@@ -244,17 +254,20 @@ void RpcCommandMapper::deleteInstanceOfType(const QByteArray &typeDescription, v
     else if (typeDescription == "QMap<QString,QMap<QString,"#typeName">") \
         delete (QMap<QString,QMap<QString,typeName > >*)instance
 
-    int type = QMetaType::type(normalizeType(typeDescription).constData());
+    int type = QMetaType::type(typeDescription.constData());
     if (type)
         QMetaType::destroy(type, instance);
+    CHECK_TYPE(bool);
+    CHECK_TYPE(int);
+    CHECK_TYPE(long long);
+    CHECK_TYPE(float);
+    CHECK_TYPE(double);
+    CHECK_TYPE(qreal);
+    CHECK_TYPE(QString);
+    CHECK_TYPE(QByteArray);
     CHECK_TYPE(QVariant);
     CHECK_TYPE(QVariantList);
     CHECK_TYPE(QVariantMap);
-    CHECK_TYPE(QByteArray);
-    CHECK_TYPE(QString);
-    CHECK_TYPE(int);
-    CHECK_TYPE(long long);
-    CHECK_TYPE(bool);
     else
         qWarning("Failed to delete an argument of type %s", typeDescription.constData());
 
@@ -282,17 +295,20 @@ QVariant RpcCommandMapper::readInstanceOfType(const QByteArray &typeDescription,
     else if (typeDescription == "QMap<QString,QMap<QString,"#typeName">") \
         return packMapOfMaps<typeName>(*(QMap<QString,QMap<QString,typeName > >*)instance)
 
-    int type = QMetaType::type(normalizeType(typeDescription).constData());
+    int type = QMetaType::type(typeDescription.constData());
     if (type)
         return QVariant(type, instance);
+    CHECK_TYPE(bool);
+    CHECK_TYPE(int);
+    CHECK_TYPE(long long);
+    CHECK_TYPE(float);
+    CHECK_TYPE(double);
+    CHECK_TYPE(qreal);
+    CHECK_TYPE(QString);
+    CHECK_TYPE(QByteArray);
     CHECK_TYPE(QVariant);
     CHECK_TYPE(QVariantList);
     CHECK_TYPE(QVariantMap);
-    CHECK_TYPE(QByteArray);
-    CHECK_TYPE(QString);
-    CHECK_TYPE(int);
-    CHECK_TYPE(long long);
-    CHECK_TYPE(bool);
     else {
         qWarning("Failed to read return value of type %s", typeDescription.constData());
         return QVariant();
@@ -367,24 +383,20 @@ QMap<QString,QMap<QString,T> > RpcCommandMapper::extractMapOfMaps(const QVariant
 
 QByteArray RpcCommandMapper::normalizeType(const QByteArray &typeDescription)
 {
-    if (typeDescription == "QVariantList")
-    {
+    QByteArray type = typeDescription.trimmed();
+
+    if (type == "QVariantList")
         return "QList<QVariant>";
-    }
-    else if (typeDescription == "QVariantMap")
-    {
+    else if (type == "QVariantMap")
         return "QMap<QString,QVariant>";
-    }
-    else if (typeDescription == "QString" || typeDescription == "QByteArray")
-    {
+    else if (type == "QString" || type == "QByteArray")
         return "QString";
-    }
-    else if (typeDescription == "int" ||
-             typeDescription == "long long")
-    {
+    else if (type == "int" || type == "long long")
         return "qlonglong";
-    }
-    return typeDescription.trimmed();
+    else if (type == "float" || type == "double" || type == "qreal")
+        return "double";
+    else
+        return type;
 }
 
 QList<QByteArray> RpcCommandMapper::listOfCommands() const
@@ -398,17 +410,21 @@ QVariant RpcCommandMapper::variantMetacall(QObject *obj, QMetaMethod method, con
 {
     //prepare qt_metacall arguments
     void** metacallArgs = (void**) malloc(sizeof(void*) * (1 + arguments.count()));
-    QByteArray returnTypeName = QByteArray(method.typeName());
-    metacallArgs[0] = newInstanceOfType(returnTypeName, QVariant());
+    QByteArray returnType = QByteArray(method.typeName());
+    if(returnType != "")
+        metacallArgs[0] = newInstanceOfType(returnType, QVariant());
     for(int i = 0; i < arguments.count(); ++i)
         metacallArgs[i+1] = newInstanceOfType(method.parameterTypes().at(i), arguments.at(i));
 
     //perform qt_metacall
     obj->qt_metacall(QMetaObject::InvokeMetaMethod, method.methodIndex(), metacallArgs);
-    QVariant returnVal = readInstanceOfType(returnTypeName, metacallArgs[0]);
+    QVariant returnVal;
+    if(returnType != "")
+        returnVal = readInstanceOfType(returnType, metacallArgs[0]);
 
     //cleanup qt_metacall arguments
-    deleteInstanceOfType(returnTypeName, metacallArgs[0]);
+    if(returnType != "")
+        deleteInstanceOfType(returnType, metacallArgs[0]);
     for(int i = 0; i < arguments.count(); ++i)
         deleteInstanceOfType(method.parameterTypes().at(i), metacallArgs[i+1]);
 

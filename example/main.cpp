@@ -30,7 +30,7 @@
 using namespace std;
 
 #include "exampleclass.h"
-#include "rpcconnection.h"
+#include <QtSimpleRpc>
 
 
 int main(int argc, char *argv[])
@@ -52,14 +52,12 @@ int main(int argc, char *argv[])
     ExampleClass example;
 
     // Create RPC layer and tell it to use our TCP socket as the communication device
-    RpcConnection rpc;
+    QtSimpleRpc rpc;
     rpc.setPeerDevice(&socket);
 
-    // Automatic mapping of incoming commands to slots of object
-    rpc.mapAllCommandsToSlots(&example);
-
-    // Automatic mapping of signals of object to outgoing (asynchronous) commands
-    rpc.mapAllSignalsToCommands(&example);
+    // Automatic mapping of incoming commands to slots of object and
+    // signals of object to outgoing (asynchronous) commands
+    rpc.registerObjectAllMembers(&example);
 
     return a.exec();
 }

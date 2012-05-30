@@ -30,6 +30,8 @@
 #ifndef GENERICSIGNALMAPPER_H
 #define GENERICSIGNALMAPPER_H
 
+#include "rpcsignalmapperhelper.h"
+
 #include <QObject>
 #include <QMetaMethod>
 #include <QVariantList>
