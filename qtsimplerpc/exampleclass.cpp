@@ -12,7 +12,7 @@ int ExampleClass::add(int a, int b)
     return a + b;
 }
 
-void ExampleClass::sleepAndNotify(QString message, int msec)
+void ExampleClass::sleepAndNotify(int msec, QString message)
 {
     QEventLoop sleepLoop;
     QTimer::singleShot(msec, &sleepLoop, SLOT(quit()));

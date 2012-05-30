@@ -75,7 +75,7 @@ void RpcConnection::mapAllCommandsToSlots(QObject *object)
         if(mo->method(i).methodType() == QMetaMethod::Slot ||
             mo->method(i).methodType() == QMetaMethod::Method)
         {
-            qDebug("Found method: %s", mo->method(i).signature());
+            //qDebug("Found method: %s", mo->method(i).signature());
             QByteArray memberName = mo->method(i).signature();
             memberName = memberName.left(memberName.indexOf('(')); // remove arguments
             mapCommandToSlot(memberName, object, memberName.constData());
@@ -96,7 +96,7 @@ void RpcConnection::mapAllSignalsToCommands(QObject *object)
     {
         if(mo->method(i).methodType() == QMetaMethod::Signal)
         {
-            qDebug("Found signal: %s", mo->method(i).signature());
+            //qDebug("Found signal: %s", mo->method(i).signature());
             QByteArray commandName = mo->method(i).signature();
             commandName = commandName.left(commandName.indexOf('(')); // remove arguments to get command name
             mapSignalToCommand(object, mo->method(i).signature(), commandName);
@@ -170,7 +170,6 @@ void RpcConnection::processRawMessage(QByteArray message)
 
 void RpcConnection::processRawCommand(QByteArray rawData)
 {
-    qDebug() << this;
     //qDebug("Command: %s", rawData.constData());
 
     bool async = false;
@@ -252,9 +251,13 @@ void RpcConnection::sendRawMessage(QByteArray message)
 
 void RpcConnection::sendCommand(QByteArray command, QVariantList arguments)
 {
-    sendRawMessage(command + " "
-                   + QJson::encode(arguments, QJson::EncodeOptions(QJson::Compact)).toUtf8()
-                   + "\n");
+    QJson::Error jsonError;
+    QString encodedArguments =
+        QJson::encode(arguments, QJson::EncodeOptions(QJson::Compact), &jsonError);
+    if(!jsonError.isNull())
+        qWarning("JSON error: %s", qPrintable(jsonError.text()));
+    else
+        sendRawMessage(command + " " + encodedArguments.toUtf8() + "\n");
 }
 
 void RpcConnection::sendCommandAsync(QByteArray command, QVariantList arguments)

@@ -14,7 +14,7 @@ signals:
 
 public slots:
     int add(int a, int b);
-    void sleepAndNotify(QString message, int msec);
+    void sleepAndNotify(int msec, QString message);
 };
 
 #endif // EXAMPLECLASS_H

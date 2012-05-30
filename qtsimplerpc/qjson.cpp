@@ -59,12 +59,26 @@ QString QJson::Error::text() const
 
 QString QJson::encode(const QVariant &data, Error *error, int indentation)
 {
+    bool deleteError = false;
+    if(!error) {
+        error = new Error;
+        deleteError = true;
+    }
     return serializeValue(data, EncodeOptions(), error, indentation, QString(""));
+    if(deleteError)
+        delete error;
 }
 
 QString QJson::encode(const QVariant &data, EncodeOptions options, Error *error, int indentation)
 {
+    bool deleteError = false;
+    if(!error) {
+        error = new Error;
+        deleteError = true;
+    }
     return serializeValue(data, options, error, indentation, QString(""));
+    if(deleteError)
+        delete error;
 }
 
 

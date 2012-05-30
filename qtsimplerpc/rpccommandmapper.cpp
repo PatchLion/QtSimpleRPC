@@ -43,8 +43,10 @@ RpcCommandMapper::CommandResult RpcCommandMapper::runCommand(const QByteArray &c
     const QMetaObject *mo = obj->metaObject();
     QByteArray memberName = objectSlot.memberName;
 
+    /*
     qDebug("Found mapping: %s => %s::%s(...)", commandName.constData(),
            mo->className(), memberName.constData());
+    */
 
     // Search for meta methods with given name (no signature check here!)
     QList<QMetaMethod> methods;
@@ -58,7 +60,7 @@ RpcCommandMapper::CommandResult RpcCommandMapper::runCommand(const QByteArray &c
 
     //we first check if the argument count can match one of the signatures, because this is fast:
     for(int i = 0; i < methods.count(); ++i) {
-        qDebug() << methods.at(i).signature();
+        //qDebug() << methods.at(i).signature();
         if(methods.at(i).parameterTypes().count() != arguments.count())
             methods.removeAt(i--);
     }
@@ -112,9 +114,9 @@ bool RpcCommandMapper::checkSignature(QMetaMethod method, const QVariantList &ar
 
     for(int i = 0; i < arguments.count(); ++i)
     {
-        qDebug("checking argument: %s", method.signature());
+        //qDebug("checking argument: %s", method.signature());
         QByteArray type = method.parameterTypes().at(i);
-        qDebug() << "against provided type:" << type;
+        //qDebug() << "against provided type:" << type;
         const QVariant & arg = arguments.at(i);
         if(!checkTypes(type, arg))
             return false;
@@ -125,7 +127,7 @@ bool RpcCommandMapper::checkSignature(QMetaMethod method, const QVariantList &ar
 bool RpcCommandMapper::checkTypes(const QByteArray &typeDescription, const QVariant &argument)
 {
     QByteArray type = normalizeType(typeDescription);
-    qDebug("checking type (normalized): \"%s\" vs \"%s\"", type.constData(), argument.typeName());
+    //qDebug("checking type (normalized): \"%s\" vs \"%s\"", type.constData(), argument.typeName());
 
     if (type == "QVariant")
     {
@@ -381,16 +383,20 @@ QVariant RpcCommandMapper::variantMetacall(QObject *obj, QMetaMethod method, con
     //prepare qt_metacall arguments
     void** metacallArgs = (void**) malloc(sizeof(void*) * (1 + arguments.count()));
     QByteArray returnType = QByteArray(method.typeName());
-    metacallArgs[0] = newInstanceOfType(returnType, QVariant());
+    if(returnType != "")
+        metacallArgs[0] = newInstanceOfType(returnType, QVariant());
     for(int i = 0; i < arguments.count(); ++i)
         metacallArgs[i+1] = newInstanceOfType(method.parameterTypes().at(i), arguments.at(i));
 
     //perform qt_metacall
     obj->qt_metacall(QMetaObject::InvokeMetaMethod, method.methodIndex(), metacallArgs);
-    QVariant returnVal = readInstanceOfType(returnType, metacallArgs[0]);
+    QVariant returnVal;
+    if(returnType != "")
+        readInstanceOfType(returnType, metacallArgs[0]);
 
     //cleanup qt_metacall arguments
-    deleteInstanceOfType(returnType, metacallArgs[0]);
+    if(returnType != "")
+        deleteInstanceOfType(returnType, metacallArgs[0]);
     for(int i = 0; i < arguments.count(); ++i)
         deleteInstanceOfType(method.parameterTypes().at(i), metacallArgs[i+1]);
 
