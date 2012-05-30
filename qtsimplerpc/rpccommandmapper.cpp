@@ -157,6 +157,10 @@ bool RpcCommandMapper::checkTypes(const QByteArray &typeDescription, const QVari
     {
         return (argument.type() == QVariant::LongLong);
     }
+    else if (type == "double")
+    {
+        return (argument.type() == QVariant::Double);
+    }
     else if (type == "bool")
     {
         return (argument.type() == QVariant::Bool);
@@ -201,14 +205,17 @@ void * RpcCommandMapper::newInstanceOfType(const QByteArray &typeDescription, co
         data = (void*) new QMap<QString,QMap<QString,typeName > >(extractMapOfMaps<typeName >(value.toMap()))
 
     if (0); //we start with an "else if", so there has to be an "if"
+    CHECK_TYPE(bool);
+    CHECK_TYPE(int);
+    CHECK_TYPE(long long);
+    CHECK_TYPE(float);
+    CHECK_TYPE(double);
+    CHECK_TYPE(qreal);
+    CHECK_TYPE(QString);
+    CHECK_TYPE(QByteArray);
     CHECK_TYPE(QVariant);
     CHECK_TYPE(QVariantList);
     CHECK_TYPE(QVariantMap);
-    CHECK_TYPE(QByteArray);
-    CHECK_TYPE(QString);
-    CHECK_TYPE(int);
-    CHECK_TYPE(long long);
-    CHECK_TYPE(bool);
     else
         qWarning("Failed to instanciate an argument of type %s", typeDescription.constData());
 
@@ -236,14 +243,17 @@ void RpcCommandMapper::deleteInstanceOfType(const QByteArray &typeDescription, v
         delete (QMap<QString,QMap<QString,typeName > >*)instance
 
     if (0); //we start with an "else if", so there has to be an "if"
+    CHECK_TYPE(bool);
+    CHECK_TYPE(int);
+    CHECK_TYPE(long long);
+    CHECK_TYPE(float);
+    CHECK_TYPE(double);
+    CHECK_TYPE(qreal);
+    CHECK_TYPE(QString);
+    CHECK_TYPE(QByteArray);
     CHECK_TYPE(QVariant);
     CHECK_TYPE(QVariantList);
     CHECK_TYPE(QVariantMap);
-    CHECK_TYPE(QByteArray);
-    CHECK_TYPE(QString);
-    CHECK_TYPE(int);
-    CHECK_TYPE(long long);
-    CHECK_TYPE(bool);
     else
         qWarning("Failed to delete an argument of type %s", typeDescription.constData());
 
@@ -269,14 +279,17 @@ QVariant RpcCommandMapper::readInstanceOfType(const QByteArray &typeDescription,
         return packMapOfMaps<typeName>(*(QMap<QString,QMap<QString,typeName > >*)instance)
 
     if (0); //we start with an "else if", so there has to be an "if"
+    CHECK_TYPE(bool);
+    CHECK_TYPE(int);
+    CHECK_TYPE(long long);
+    CHECK_TYPE(float);
+    CHECK_TYPE(double);
+    CHECK_TYPE(qreal);
+    CHECK_TYPE(QString);
+    CHECK_TYPE(QByteArray);
     CHECK_TYPE(QVariant);
     CHECK_TYPE(QVariantList);
     CHECK_TYPE(QVariantMap);
-    CHECK_TYPE(QByteArray);
-    CHECK_TYPE(QString);
-    CHECK_TYPE(int);
-    CHECK_TYPE(long long);
-    CHECK_TYPE(bool);
     else {
         qWarning("Failed to read return value of type %s", typeDescription.constData());
         return QVariant();
@@ -351,24 +364,20 @@ QMap<QString,QMap<QString,T> > RpcCommandMapper::extractMapOfMaps(const QVariant
 
 QByteArray RpcCommandMapper::normalizeType(const QByteArray &typeDescription)
 {
-    if (typeDescription == "QVariantList")
-    {
+    QByteArray type = typeDescription.trimmed();
+
+    if (type == "QVariantList")
         return "QList<QVariant>";
-    }
-    else if (typeDescription == "QVariantMap")
-    {
+    else if (type == "QVariantMap")
         return "QMap<QString,QVariant>";
-    }
-    else if (typeDescription == "QString" || typeDescription == "QByteArray")
-    {
+    else if (type == "QString" || type == "QByteArray")
         return "QString";
-    }
-    else if (typeDescription == "int" ||
-             typeDescription == "long long")
-    {
+    else if (type == "int" || type == "long long")
         return "qlonglong";
-    }
-    return typeDescription.trimmed();
+    else if (type == "float" || type == "double" || type == "qreal")
+        return "double";
+    else
+        return type;
 }
 
 QList<QByteArray> RpcCommandMapper::listOfCommands() const
@@ -392,7 +401,7 @@ QVariant RpcCommandMapper::variantMetacall(QObject *obj, QMetaMethod method, con
     obj->qt_metacall(QMetaObject::InvokeMetaMethod, method.methodIndex(), metacallArgs);
     QVariant returnVal;
     if(returnType != "")
-        readInstanceOfType(returnType, metacallArgs[0]);
+        returnVal = readInstanceOfType(returnType, metacallArgs[0]);
 
     //cleanup qt_metacall arguments
     if(returnType != "")

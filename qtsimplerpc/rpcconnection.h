@@ -34,7 +34,6 @@ class QIODevice;
 class RpcCommandMapper;
 class RpcSignalMapper;
 
-
 class RpcConnection : public QObject
 {
     Q_OBJECT
@@ -63,13 +62,14 @@ public slots:
     void mapSignalToCommand(QObject *object, const char *signal, const QByteArray &commandName);
     void mapAllSignalsToCommands(QObject *object);
 
-    //! Call command on the remote end
+    //! Calls command on the remote end
     QVariant remoteCall(QByteArray command, QVariantList arguments, int *errorCode = 0);
-    //! Call command asynchronously on the remote end
+    //! Calls command asynchronously on the remote end
     void remoteCallAsync(QByteArray command, QVariantList arguments);
 
 signals:
-    void deviceFlush(); //!< Emitted when the device should be flushed when supported (for example QTcpSocket::flush())
+    //! Emitted when the device should be flushed when supported (for example QTcpSocket::flush())
+    void deviceFlush();
 
 private slots:
     void device_readyRead();

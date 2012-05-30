@@ -24,22 +24,22 @@
 QT += core network
 QT -= gui
 
-TARGET = qtsimplerpc
-CONFIG -= app_bundle
+TARGET = QtSimpleRpc
+TEMPLATE = lib
 
-TEMPLATE = app
+DEFINES += QTSIMPLERPC_LIBRARY
 
-SOURCES += main.cpp \
-    rpcsignalmapperhelper.cpp \
+SOURCES += rpcsignalmapperhelper.cpp \
     rpcsignalmapper.cpp \
     rpcconnection.cpp \
     rpccommandmapper.cpp \
     qjson.cpp \
-    exampleclass.cpp
+    qtsimplerpc.cpp
 
 HEADERS += \
     rpcsignalmapper.h \
     rpcconnection.h \
     rpccommandmapper.h \
     qjson.h \
-    exampleclass.h
+    qtsimplerpc_global.h \
+    qtsimplerpc.h

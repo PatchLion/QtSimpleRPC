@@ -1,0 +1,12 @@
+#ifndef QTSIMPLERPC_GLOBAL_H
+#define QTSIMPLERPC_GLOBAL_H
+
+#include <QtCore/QtGlobal>
+
+#if defined(QTSIMPLERPC_LIBRARY)
+#  define QTSIMPLERPC_EXPORT Q_DECL_EXPORT
+#else
+#  define QTSIMPLERPC_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // QTSIMPLERPC_GLOBAL_H
