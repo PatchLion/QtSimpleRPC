@@ -8,6 +8,11 @@ QtSimpleRpc::QtSimpleRpc(QObject *parent) :
 {
 }
 
+void QtSimpleRpc::registerEnumsOfMetaObject(const QMetaObject *metaObject)
+{
+    RpcConnection::registerEnums(metaObject);
+}
+
 void QtSimpleRpc::setPeerDevice(QIODevice *peerDevice)
 {
     connection->setPeerDevice(peerDevice);
@@ -18,28 +23,28 @@ QIODevice *QtSimpleRpc::peerDevice() const
     return connection->peerDevice();
 }
 
-void QtSimpleRpc::registerObjectAllMembers(QObject *object)
+void QtSimpleRpc::bindObjectAllMembers(QObject *object)
 {
     connection->mapAllCommandsToSlots(object);
     connection->mapAllSignalsToCommands(object);
 }
 
-void QtSimpleRpc::registerObjectAllSlotsIncoming(QObject *object)
+void QtSimpleRpc::bindObjectAllSlotsIncoming(QObject *object)
 {
     connection->mapAllCommandsToSlots(object);
 }
 
-void QtSimpleRpc::registerObjectAllSignalsOutgoing(QObject *object)
+void QtSimpleRpc::bindObjectAllSignalsOutgoing(QObject *object)
 {
     connection->mapAllSignalsToCommands(object);
 }
 
-void QtSimpleRpc::registerSlotAsCustomIncomingCommand(QObject *object, const char *member, QByteArray commandName)
+void QtSimpleRpc::bindSlotAsCustomIncomingCommand(QObject *object, const char *member, QByteArray commandName)
 {
     connection->mapCommandToSlot(commandName, object, member);
 }
 
-void QtSimpleRpc::registerSignalAsCustomOutgoingCommand(QObject *object, const char *signal, QByteArray commandName)
+void QtSimpleRpc::bindSignalAsCustomOutgoingCommand(QObject *object, const char *signal, QByteArray commandName)
 {
     connection->mapSignalToCommand(object, signal, commandName);
 }

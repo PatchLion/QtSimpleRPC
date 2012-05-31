@@ -184,7 +184,37 @@ bool RpcCommandMapper::checkMap(const QByteArray &elementTypeDescription, const 
     return true;
 }
 
-void * RpcCommandMapper::newInstanceOfType(const QByteArray &typeDescription, const QVariant &value)
+
+QByteArray RpcCommandMapper::normalizeType(const QByteArray &typeDescription)
+{
+    QByteArray type = typeDescription.trimmed();
+
+    if (type == "QVariantList")
+        return "QList<QVariant>";
+    else if (type == "QVariantMap")
+        return "QMap<QString,QVariant>";
+    else if (type == "QString" || type == "QByteArray")
+        return "QString";
+    else if (type == "int" || type == "long long")
+        return "qlonglong";
+    else if (type == "float" || type == "double" || type == "qreal")
+        return "double";
+    else
+        return type;
+}
+
+int RpcCommandMapper::metaType(const QByteArray &typeDescription, const QMetaObject *mo)
+{
+    int type = QMetaType::type(typeDescription.constData());
+    // try nested types
+    if (!type) {
+        QByteArray nestedTypeDescription = QByteArray(mo->className()) + "::" + typeDescription;
+        type = QMetaType::type(nestedTypeDescription.constData());
+    }
+    return type;
+}
+
+void * RpcCommandMapper::newInstanceOfType(const QByteArray &typeDescription, const QMetaObject *mo, const QVariant &value)
 {
 
 #define CHECK_TYPE(typeName) \
@@ -203,8 +233,7 @@ void * RpcCommandMapper::newInstanceOfType(const QByteArray &typeDescription, co
     else if (typeDescription == "QMap<QString,QMap<QString,"#typeName"> >") \
         return (void*) new QMap<QString,QMap<QString,typeName > >(extractMapOfMaps<typeName >(value.toMap()))
 
-    int type = QMetaType::type(typeDescription.constData());
-    qDebug("QMetaType::type(\"%s\") = %i", typeDescription.constData(), type);
+    int type = metaType(typeDescription, mo);
     if (type) {
         if (value.canConvert((QVariant::Type)type)) {
             QVariant converted = value;
@@ -233,7 +262,7 @@ void * RpcCommandMapper::newInstanceOfType(const QByteArray &typeDescription, co
 #undef CHECK_TYPE
 }
 
-void RpcCommandMapper::deleteInstanceOfType(const QByteArray &typeDescription, void *instance)
+void RpcCommandMapper::deleteInstanceOfType(const QByteArray &typeDescription, const QMetaObject *mo, void *instance)
 {
     if (!instance)
         return;
@@ -254,7 +283,7 @@ void RpcCommandMapper::deleteInstanceOfType(const QByteArray &typeDescription, v
     else if (typeDescription == "QMap<QString,QMap<QString,"#typeName">") \
         delete (QMap<QString,QMap<QString,typeName > >*)instance
 
-    int type = QMetaType::type(typeDescription.constData());
+    int type = metaType(typeDescription, mo);
     if (type)
         QMetaType::destroy(type, instance);
     CHECK_TYPE(bool);
@@ -274,7 +303,7 @@ void RpcCommandMapper::deleteInstanceOfType(const QByteArray &typeDescription, v
 #undef CHECK_TYPE
 }
 
-QVariant RpcCommandMapper::readInstanceOfType(const QByteArray &typeDescription, void *instance)
+QVariant RpcCommandMapper::readInstanceOfType(const QByteArray &typeDescription, const QMetaObject *mo, void *instance)
 {
     if (!instance)
         return QVariant();
@@ -295,7 +324,7 @@ QVariant RpcCommandMapper::readInstanceOfType(const QByteArray &typeDescription,
     else if (typeDescription == "QMap<QString,QMap<QString,"#typeName">") \
         return packMapOfMaps<typeName>(*(QMap<QString,QMap<QString,typeName > >*)instance)
 
-    int type = QMetaType::type(typeDescription.constData());
+    int type = metaType(typeDescription, mo);
     if (type)
         return QVariant(type, instance);
     CHECK_TYPE(bool);
@@ -316,6 +345,7 @@ QVariant RpcCommandMapper::readInstanceOfType(const QByteArray &typeDescription,
 
 #undef CHECK_TYPE
 }
+
 
 template <typename T>
 QList<T> RpcCommandMapper::extractList(const QVariantList &list)
@@ -381,24 +411,6 @@ QMap<QString,QMap<QString,T> > RpcCommandMapper::extractMapOfMaps(const QVariant
 }
 
 
-QByteArray RpcCommandMapper::normalizeType(const QByteArray &typeDescription)
-{
-    QByteArray type = typeDescription.trimmed();
-
-    if (type == "QVariantList")
-        return "QList<QVariant>";
-    else if (type == "QVariantMap")
-        return "QMap<QString,QVariant>";
-    else if (type == "QString" || type == "QByteArray")
-        return "QString";
-    else if (type == "int" || type == "long long")
-        return "qlonglong";
-    else if (type == "float" || type == "double" || type == "qreal")
-        return "double";
-    else
-        return type;
-}
-
 QList<QByteArray> RpcCommandMapper::listOfCommands() const
 {
     QList<QByteArray> commands = mappings.keys();
@@ -412,21 +424,24 @@ QVariant RpcCommandMapper::variantMetacall(QObject *obj, QMetaMethod method, con
     void** metacallArgs = (void**) malloc(sizeof(void*) * (1 + arguments.count()));
     QByteArray returnType = QByteArray(method.typeName());
     if(returnType != "")
-        metacallArgs[0] = newInstanceOfType(returnType, QVariant());
+        metacallArgs[0] = newInstanceOfType(returnType, obj->metaObject(), QVariant());
+    else
+        metacallArgs[0] = NULL;
     for(int i = 0; i < arguments.count(); ++i)
-        metacallArgs[i+1] = newInstanceOfType(method.parameterTypes().at(i), arguments.at(i));
+        metacallArgs[i+1] = newInstanceOfType(method.parameterTypes().at(i), obj->metaObject(), arguments.at(i));
 
     //perform qt_metacall
     obj->qt_metacall(QMetaObject::InvokeMetaMethod, method.methodIndex(), metacallArgs);
     QVariant returnVal;
     if(returnType != "")
-        returnVal = readInstanceOfType(returnType, metacallArgs[0]);
+        returnVal = readInstanceOfType(returnType, obj->metaObject(), metacallArgs[0]);
 
     //cleanup qt_metacall arguments
     if(returnType != "")
-        deleteInstanceOfType(returnType, metacallArgs[0]);
+        deleteInstanceOfType(returnType, obj->metaObject(), metacallArgs[0]);
     for(int i = 0; i < arguments.count(); ++i)
-        deleteInstanceOfType(method.parameterTypes().at(i), metacallArgs[i+1]);
+        deleteInstanceOfType(method.parameterTypes().at(i), obj->metaObject(), metacallArgs[i+1]);
 
     return returnVal;
 }
+

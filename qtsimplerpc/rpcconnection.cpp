@@ -116,6 +116,19 @@ void RpcConnection::remoteCallAsync(QByteArray command, QVariantList arguments)
     sendCommandAsync(command, arguments);
 }
 
+void RpcConnection::registerEnums(const QMetaObject *metaObject)
+{
+    //qDebug("Registering enums of class %s", metaObject->className());
+    for(int i = QObject::staticMetaObject.enumeratorOffset(); i < metaObject->enumeratorCount(); ++i)
+    {
+        QMetaEnum metaEnum = metaObject->enumerator(i);
+        QByteArray enumTypeName = QByteArray(metaObject->className()) + "::" + metaEnum.name();
+        int enumType = QMetaType::type(enumTypeName.constData());
+        if(enumType)
+            QJson::treatMetaTypeAsInteger(enumType);
+    }
+}
+
 void RpcConnection::device_readyRead()
 {
     // read data from device into internal buffer
@@ -291,4 +304,5 @@ void RpcConnection::sendResponseCommandSignatureMismatchError(QByteArray command
 {
     sendResponse(SystemError, QVariant("Signature mismatch for command " + commandName));
 }
+
 

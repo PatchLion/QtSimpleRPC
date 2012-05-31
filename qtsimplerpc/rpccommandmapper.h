@@ -97,10 +97,12 @@ private:
     static bool checkTypes(const QByteArray &typeDescription, const QVariant &argument);
     static bool checkList(const QByteArray &elementTypeDescription, const QVariantList &argument);
     static bool checkMap(const QByteArray &elementTypeDescription, const QVariantMap &argument);
-    static void* newInstanceOfType(const QByteArray &typeDescription, const QVariant &value);
-    static void deleteInstanceOfType(const QByteArray &typeDescription, void *instance);
-    static QVariant readInstanceOfType(const QByteArray &typeDescription, void *instance);
+
     static QByteArray normalizeType(const QByteArray &typeDescription);
+    static int metaType(const QByteArray &typeDescription, const QMetaObject *mo);
+    static void* newInstanceOfType(const QByteArray &typeDescription, const QMetaObject *mo, const QVariant &value);
+    static void deleteInstanceOfType(const QByteArray &typeDescription, const QMetaObject *mo, void *instance);
+    static QVariant readInstanceOfType(const QByteArray &typeDescription, const QMetaObject *mo, void *instance);
 
     template <typename T> static inline QList<T> extractList(const QVariantList &list);
     template <typename T> static inline QMap<QString,T> extractMap(const QVariantMap &addMapping);

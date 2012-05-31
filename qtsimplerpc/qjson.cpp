@@ -23,7 +23,10 @@
 
 #include "qjson.h"
 #include <QStringList>
+#include <QDebug>
 
+
+QList<int> QJson::metaTypes_int;
 
 QJson::QJson()
 {
@@ -156,13 +159,22 @@ QString QJson::serializeValue(const QVariant &data, EncodeOptions options, Error
         break;
 
     default:
-        if(!options.testFlag(EncodeUnknownTypesAsNull))
+        if(data.type() == QVariant::UserType && metaTypes_int.contains(data.userType()))
+        {
+            // reinterpret the internal contents of the variant
+            int value = *reinterpret_cast<const int*>(data.constData());
+            encoded = QVariant(value).toString();
+        }
+        else if(!options.testFlag(EncodeUnknownTypesAsNull))
         {
             if(error)
                 *error = Error(Error::UnknownType);
             return QString();
         }
-        encoded = QString::fromAscii("null");
+        else
+        {
+            encoded = QString::fromAscii("null");
+        }
         break;
     }
 
@@ -216,6 +228,11 @@ QString QJson::serializeString(QString data)
     }
     encoded.append(QChar::fromAscii('"'));
     return encoded;
+}
+
+void QJson::treatMetaTypeAsInteger(int metaType)
+{
+    metaTypes_int << metaType;
 }
 
 template<typename QVariantHashOrMap>

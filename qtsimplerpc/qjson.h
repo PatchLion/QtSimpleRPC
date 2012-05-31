@@ -83,6 +83,9 @@ public:
     static QVariant decode(const QString &json, Error *error = 0);
     static QVariant decode(const QString &json, DecodeOptions options, Error *error = 0);
 
+    //! Use this method to treat the given type, for example an enumerator, as it would be an integer. This may lead to program crash if the type can't be treated as an integer.
+    static void treatMetaTypeAsInteger(int metaType);
+
 private:
     QJson();
 
@@ -103,6 +106,8 @@ private:
     static int skipWhitespace(const QString &json, int &index);
     static bool checkAvailable(const QString &json, int &index, bool &success, Error *error, int minAvailable = 1);
     static bool checkToken(const QString &json, int &index, bool &success, Error *error, QString token);
+
+    static QList<int> metaTypes_int;
 };
 
 #endif // QJSON_H

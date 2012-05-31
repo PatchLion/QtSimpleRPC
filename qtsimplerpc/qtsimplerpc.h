@@ -16,16 +16,19 @@ class QTSIMPLERPC_EXPORT QtSimpleRpc : public QObject
 public:
     explicit QtSimpleRpc(QObject *parent = 0);
 
+    template<class QObjectSubclass> static void registerEnumsOfClass() { registerEnumsOfMetaObject(&QObjectSubclass::staticMetaObject); }
+    static void registerEnumsOfMetaObject(const QMetaObject *metaObject);
+
 public slots:
     void setPeerDevice(QIODevice *peerDevice);
     QIODevice *peerDevice() const;
     
-    void registerObjectAllMembers(QObject *object);
-    void registerObjectAllSlotsIncoming(QObject *object);
-    void registerObjectAllSignalsOutgoing(QObject *object);
+    void bindObjectAllMembers(QObject *object);
+    void bindObjectAllSlotsIncoming(QObject *object);
+    void bindObjectAllSignalsOutgoing(QObject *object);
 
-    void registerSlotAsCustomIncomingCommand(QObject *object, const char *member, QByteArray commandName);
-    void registerSignalAsCustomOutgoingCommand(QObject *object, const char *signal, QByteArray commandName);
+    void bindSlotAsCustomIncomingCommand(QObject *object, const char *member, QByteArray commandName);
+    void bindSignalAsCustomOutgoingCommand(QObject *object, const char *signal, QByteArray commandName);
 
     QVariant remoteCall(QByteArray commandName, QVariantList arguments, int *errorCode = 0);
     void remoteCallAsync(QByteArray commandName, QVariantList arguments);

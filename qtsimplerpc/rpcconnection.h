@@ -67,6 +67,9 @@ public slots:
     //! Calls command asynchronously on the remote end
     void remoteCallAsync(QByteArray command, QVariantList arguments);
 
+    //! Registers all enums registered as meta enums using Q_ENUMS() macro within the class definition
+    static void registerEnums(const QMetaObject *metaObject);
+
 signals:
     //! Emitted when the device should be flushed when supported (for example QTcpSocket::flush())
     void deviceFlush();
